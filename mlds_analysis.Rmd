@@ -1,0 +1,182 @@
+---
+title: "189final"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd('/Users/Judy-Ccino412/Desktop/189_final')
+survey <- read.csv(file = "kaggle_survey_2020_responses.csv")
+survey
+head(survey)
+```
+
+
+#2.1
+```{r}
+t <- survey$Time.from.Start.to.Finish..seconds.
+t <- t[2:20037]
+t <- as.numeric(unlist(t))
+
+
+B = 400 # the number of bootstrap samples we want
+boot.sample <- array(dim = c(B, 91))
+for (i in 1:B) {
+  boot.sample[i, ] <- sample(t, size = 91, replace = FALSE)
+}
+
+boot.mean <- apply(X = boot.sample, MARGIN = 1, FUN = mean)
+head(boot.mean) 
+
+hist(log(boot.mean), breaks = 20, probability = TRUE, density = 20, col = 3, border = 3)
+lines(density(log(boot.mean), adjust = 2), col = 2)
+
+par(pty = 's')
+qqnorm(log(boot.mean))
+qqline(log(boot.mean))
+
+ks.test((boot.mean - mean(boot.mean))/sd(boot.mean), pnorm) 
+
+boot.sd <- sd(log(boot.mean))
+mean(log(t))+ c(-1, 1)*1.96*boot.sd
+
+```
+
+
+#2.2
+```{r}
+Q6_mean <- function(a) {
+  if (a == '3-5 years') {
+        y = 4
+    } else if (a == '1-2 years') {
+        y = 1.5
+    } else if (a == '< 1 years'){
+        y = 0.5
+    } else if (a == '5-10 years'){
+        y = 7.5
+    } else if (a == '10-20 years'){
+        y = 15
+    } else if (a == '20+ years'){
+        y = 20
+    } else {
+      y = 0
+    }
+  return(y)
+}
+
+male_Q6 <- survey$Q6[which(survey$Q2 == 'Man')]
+female_Q6 <- survey$Q6[which(survey$Q2 == 'Woman')]
+
+male <- sapply(male_Q6, FUN= Q6_mean)
+female <- sapply(female_Q6, FUN= Q6_mean)
+
+Q6_num <- sapply(survey$Q6, FUN= Q6_mean)
+qqnorm(Q6_num)
+x <- rnorm(1000)
+qqline(x, lty=2, col="red")
+
+t.test(male,female,alternative = 'greater')
+
+```
+
+#2.4
+```{r}
+data <- read.csv('kaggle_survey_2020_responses.csv')
+data <- data[-c(1), ]
+```
+
+```{r}
+data_3 <- data[,c(6, 8, 9)]
+data_3
+```
+```{r}
+# Python distribution
+tb1 <- subset(data_3, data_3$Q7_Part_1 == 'Python')
+tb1 = tb1 %>% count(Q5)
+tb1 %>% 
+    ggplot(aes(x = Q5, y = n)) +
+    geom_col(fill = "#FF7F24") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+```{r}
+# R distribution
+tb2 <- subset(data_3, data_3$Q7_Part_2 == 'R')
+tb2 = tb2 %>% count(Q5)
+tb2 %>% 
+    ggplot(aes(x = Q5, y = n)) +
+    geom_col(fill = "#FF7F24") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+```{r}
+tb3_piv <- tb53 %>% group_by(Q5, Q4) %>% mutate(count=n())
+ggplot(data=tb3_piv,mapping=aes(x=Q5, fill=Q4))+geom_bar()+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+ggplot(data=tb3_piv,mapping=aes(x=Q5, y = count,fill=Q4))+geom_bar(position="dodge",stat="identity")+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+chi-square test
+```{r}
+chisq.test(c(tb1$n), p=c(tb2$n/sum(tb2$n)))
+```
+
+
+#2.3
+```{r}
+
+data5 <- data[,c(2, 3, 5, 6)]
+```
+```{r}
+tb51 <- data5[,c(1, 4)]
+tb1_piv <- tb51 %>% group_by(Q5, Q1) %>% mutate(count=n())
+tb1_piv$freq <- tb1_piv$count
+ggplot(data=tb1_piv,mapping=aes(x=Q5, fill=Q1))+geom_bar()+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+ggplot(data=tb1_piv,mapping=aes(x=Q5, y = count,fill=Q1))+geom_bar(position="dodge",stat="identity")+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+
+```
+```{r}
+tb52 <- data5[,c(2, 4)]
+tb2_piv <- tb52 %>% group_by(Q5, Q2) %>% mutate(count=n())
+ggplot(data=tb2_piv,mapping=aes(x=Q5, fill=Q2))+geom_bar()+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+ggplot(data=tb2_piv,mapping=aes(x=Q5, y = count,fill=Q2))+geom_bar(position="dodge",stat="identity")+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+
+```
+```{r}
+tb53 <- data5[,c(3, 4)]
+tb53$Q4 <- revalue(tb53$Q4, c("Some college/university study without earning a bachelor’s degree" = "Some college/university study"))
+
+```
+```{r}
+tb3_piv <- tb53 %>% group_by(Q5, Q4) %>% mutate(count=n())
+ggplot(data=tb3_piv,mapping=aes(x=Q5, fill=Q4))+geom_bar()+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+ggplot(data=tb3_piv,mapping=aes(x=Q5, y = count,fill=Q4))+geom_bar(position="dodge",stat="identity")+theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1),
+          axis.title = element_blank(),
+          plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+
